@@ -7,3 +7,5 @@ This is a group of ipython notebooks that contain implementations of
   * Newton method
   
 * The UNIFAC method for activity calculation
+
+* Contact angle calculation using an Equation of State
