@@ -1,10 +1,11 @@
 # thermodynamics-notebook
 
-This is a group of ipython notebooks that contain implementations of
+This is a group of jupyter notebooks and a phase equilibria module that contain implementations of
 
 * Multicomponent two-phase equilibria
   * Successive substitutions
   * Newton method
+  * van Der Waals, PR and SRK equation of state
   
 * The UNIFAC method for activity calculation
 
