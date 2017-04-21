@@ -3,6 +3,8 @@ from scipy.optimize import fsolve
 
 from flash import ss_flash, flash_residual_function
 from stability import calculate_stability_test
+from utils import calculate_K_values_wilson
+
 
 
 def calculate_vapor_liquid_equilibrium(

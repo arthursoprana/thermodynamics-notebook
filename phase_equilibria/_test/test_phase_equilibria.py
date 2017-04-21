@@ -39,10 +39,7 @@ def input_properties_case_whitson_problem_18_PR():
             molar_mass, omega_a, omega_b, binary_interaction)
 
 
-fugacity_expected = np.array([294.397, 148.342, 3.02385]) * 6894.75729
-K_values_expected = np.array([6.65071, 0.890061, 0.03624])
-x_expected = np.array([0.08588, 0.46349, 0.45064])
-y_expected = np.array([0.57114, 0.41253, 0.01633])
+
 
 def test_phase_equilibria():
     # Get input properties
@@ -84,6 +81,12 @@ def test_phase_equilibria():
     print ('K_values estimates:', K_values_est)
 
     K_values_from_ss_flash, F_V, f_L = ss_flash(eos, pressure, temperature, global_molar_fractions, K_values_est, tolerance = 1.0e-1)
+
+    fugacity_expected = np.array([294.397, 148.342, 3.02385]) * 6894.75729
+    K_values_expected = np.array([6.65071, 0.890061, 0.03624])
+    x_expected = np.array([0.08588, 0.46349, 0.45064])
+    y_expected = np.array([0.57114, 0.41253, 0.01633])
+    
     print ('K_values Successive Subst:', K_values_from_ss_flash)
     print ('Vapor molar fraction:', F_V)
     print ('\n-----\nFugacities obtained:', f_L)
