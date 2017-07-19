@@ -82,6 +82,9 @@ class EquationOfState:
         if len(Z) == 1:
             return f0
 
+        if Z[1] < 0.0:
+            return f0
+
         f1 = self.calculate_fugacities(P, T, Z[1], x)
 
         g0 = self.calculate_normalized_gibbs_energy(f0, x)

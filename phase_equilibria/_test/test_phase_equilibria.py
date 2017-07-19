@@ -5,6 +5,7 @@ from eos import VanDerWaalsEos, PengRobinsonEos, SoaveRedlichKwongEos
 from flash import ss_flash, flash_residual_function
 from stability import calculate_stability_test
 from utils import calculate_K_values_wilson
+from cases import input_properties_case_Ghafri
 
 
 def input_properties_case_whitson_problem_18_PR():
@@ -117,4 +118,77 @@ def test_phase_equilibria():
 
     assert np.allclose(K_values_newton, K_values_expected, rtol=0.01)
     assert np.allclose(fugacity_expected, f_L, rtol=0.1)
+    
+
+def test_phase_equilibria_CO2():
+    # Get input properties
+    temperature = 290.0 # [K]   
+    pressure = 1.5 * 1e5 # [Pa]
+    
+    props = input_properties_case_Ghafri(temperature)
+
+    (_, _, global_molar_fractions,
+    critical_pressure, critical_temperature, acentric_factor,
+    molar_mass, omega_a, omega_b, binary_interaction) = props
+
+
+    # Estimate initial K-values
+    initial_K_values = calculate_K_values_wilson(
+        pressure,
+        temperature,
+        critical_pressure,
+        critical_temperature,
+        acentric_factor
+    )
+
+    # Create EoS object and set properties
+    #eos = VanDerWaalsEos, PengRobinsonEos, SoaveRedlichKwongEos
+    eos = PengRobinsonEos(critical_pressure, critical_temperature, acentric_factor,
+                          omega_a, omega_b, binary_interaction)
+
+    is_stable, K_values_est = calculate_stability_test(
+        eos,
+        pressure,
+        temperature,
+        global_molar_fractions,
+        initial_K_values
+    )
+
+    print ('System is stable?', is_stable)
+    print ('K_values estimates:', K_values_est)
+
+    K_values_from_ss_flash, F_V, f_L = ss_flash(eos, pressure, temperature, global_molar_fractions, K_values_est, tolerance=1.0e-1)
+
+    
+    print ('K_values Successive Subst:', K_values_from_ss_flash)
+    print ('Vapor molar fraction:', F_V)
+    print ('\n-----\nFugacities obtained:', f_L)
+
+    # Use estimates from Wilson's Equation!!!
+    #x0 = np.append(initial_K_values, F_V) # It does not work!
+
+    # Use estimates from stability test!!!
+    #x0 = np.append(K_values_est, 0.1) # It does not work!
+
+    # Use estimates from successive substitutions!!!
+    x0 = np.append(K_values_from_ss_flash, F_V) # Good estimate!
+
+    result = fsolve(
+        func=flash_residual_function,
+        x0=x0,
+        args=(temperature, pressure, eos, global_molar_fractions),
+        full_output=1
+    )
+    converged = result[2]
+    msg = result[3]
+    print (msg)
+    
+    X = result[0]
+    size = X.shape[0]
+    K_values_newton = X[0:size-1]
+    F_V = X[size-1]
+    print ('K_values newton:', K_values_newton)
+    print ('Vapor molar fraction:', F_V)
+    assert converged == 1
+
 

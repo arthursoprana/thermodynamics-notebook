@@ -161,3 +161,51 @@ def input_properties_case_dissertation_PR():
     return (pressure, temperature, global_molar_fractions,
             critical_pressure, critical_temperature, acentric_factor,
             molar_mass, omega_a, omega_b, binary_interaction)
+    
+    
+def input_properties_case_Ghafri(T, filename='comp.xlsx'):
+    pressure, temperature = np.nan, np.nan
+
+    import pandas as pd
+    data_comp = pd.read_excel(io=filename, sheetname='Components', header=3)
+    data_bib = pd.read_excel(io=filename, sheetname='BIP\'s', header=6)
+    data_z = pd.read_excel(io=filename, sheetname='Live Oil Composition', header=6)    
+
+    component_names = data_comp['Name'].iloc[:-2].as_matrix()
+    component_formula = data_comp['Formula'].iloc[:-2].as_matrix()
+    critical_pressure = data_comp['Pc (bar) - \nCritical Pressure'].iloc[:-2].as_matrix() * 1e5 # [Pa]
+    critical_temperature = data_comp['Tc (K) - \nCritical Temperature'].iloc[:-2].as_matrix() # [K]
+    acentric_factor = data_comp['ω (-) - \nPitzer\'s Acentric Factor'].iloc[:-2].as_matrix() # [-]
+    molar_mass = data_comp['Mw (kg/mol) - \nMolar Weight'].iloc[:-2].as_matrix() # [kg/mol]
+    omega_a = np.full_like(molar_mass, 0.45724) # [-]
+    omega_b = np.full_like(molar_mass, 0.07780) # [-]
+
+    N = len(component_names)
+
+    φ0 = np.zeros((N, N))
+    φ1 = np.zeros((N, N))
+    φ2 = np.zeros((N, N))
+
+    for i, (name, col) in enumerate(data_bib.items()):
+        φ = np.r_[i*[-1, -1, -1], [0.5, 0.5, 0.5], data_bib[name].dropna().values]
+        φ = φ.reshape((N, 3))
+        φ0[i:, i] = φ[i:, 0]
+        φ1[i:, i] = φ[i:, 1]
+        φ2[i:, i] = φ[i:, 2]
+
+    φ0 = φ0 + φ0.T 
+    φ1 = φ1 + φ1.T 
+    φ2 = φ2 + φ2.T 
+
+    def BIP(T, φ0, φ1, φ2):
+        expr = φ0 + φ1 * T + φ2 * T**2
+        np.fill_diagonal(expr, 1.0)
+        return expr
+
+    binary_interaction = BIP(T, φ0, φ1, φ2)
+
+    global_molar_fractions = data_z['Unnamed: 1'].values[:-2]
+
+    return (pressure, temperature, global_molar_fractions, 
+        critical_pressure, critical_temperature, acentric_factor,
+        molar_mass, omega_a, omega_b, binary_interaction)
